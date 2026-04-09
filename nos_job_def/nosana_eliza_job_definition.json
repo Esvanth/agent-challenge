@@ -5,7 +5,7 @@
     "trigger": "api"
   },
   "global": {
-    "image": "docker.io/your-dockerhub-username/mindtune-eliza:latest",
+    "image": "docker.io/esvanth7/mindtune-eliza:latest",
     "env": [
       { "name": "GROQ_API_KEY", "value": "$GROQ_API_KEY" },
       { "name": "GROQ_LARGE_MODEL", "value": "llama-3.3-70b-versatile" },
