@@ -1,0 +1,27 @@
+{
+  "version": "1",
+  "type": "container",
+  "meta": {
+    "trigger": "api"
+  },
+  "global": {
+    "image": "docker.io/your-dockerhub-username/mindtune-eliza:latest",
+    "env": [
+      { "name": "GROQ_API_KEY", "value": "$GROQ_API_KEY" },
+      { "name": "GROQ_LARGE_MODEL", "value": "llama-3.3-70b-versatile" },
+      { "name": "LARGE_GROQ_MODEL", "value": "llama-3.3-70b-versatile" },
+      { "name": "PORT", "value": "3000" }
+    ]
+  },
+  "ops": [
+    {
+      "id": "run-mindtune-agent",
+      "type": "container/run",
+      "args": {
+        "cmd": ["node", "dist/index.js"],
+        "expose": 3000,
+        "gpu": false
+      }
+    }
+  ]
+}

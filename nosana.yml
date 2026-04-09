@@ -1,0 +1,23 @@
+version: "1"
+type: container
+
+meta:
+  trigger: api
+
+global:
+  image: docker.io/your-dockerhub-username/mindtune-eliza:latest
+  env:
+    - name: NOSANA_API_KEY
+      value: $NOSANA_API_KEY
+    - name: NOSANA_INFERENCE_URL
+      value: https://inference.nosana.io/v1
+    - name: PORT
+      value: "3000"
+
+ops:
+  - id: run-mindtune-agent
+    type: container/run
+    args:
+      cmd: ["node", "dist/index.js"]
+      expose: 3000
+      gpu: false
