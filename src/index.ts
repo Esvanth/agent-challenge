@@ -5,7 +5,6 @@ import Database from "better-sqlite3";
 import * as dotenv from "dotenv";
 import * as path from "path";
 import * as fs from "fs";
-import * as http from "http";
 
 import { mindtuneCharacter } from "./character.js";
 import { analyzeEEGAction } from "./actions/analyzeEEG.js";
@@ -64,20 +63,17 @@ async function main() {
     res.json({ id: runtime.agentId, name: runtime.character.name });
   });
 
+  // Serve web UI on the same port
+  const publicDir = path.join(process.cwd(), "public");
+  if (fs.existsSync(publicDir)) {
+    directClient.app.get("/", (_req: any, res: any) => {
+      res.sendFile(path.join(publicDir, "index.html"));
+    });
+  }
+
   const port = parseInt(process.env.PORT || "3000");
   directClient.start(port);
-
-  // Serve web UI on port+1
-  const publicDir = path.join(process.cwd(), "public");
-  const uiPort = port + 1;
-  if (fs.existsSync(publicDir)) {
-    const html = fs.readFileSync(path.join(publicDir, "index.html"), "utf-8");
-    http.createServer((_req, res) => {
-      res.writeHead(200, { "Content-Type": "text/html" });
-      res.end(html);
-    }).listen(uiPort);
-    elizaLogger.info(`Web UI: http://localhost:${uiPort}`);
-  }
+  elizaLogger.info(`Web UI: http://localhost:${port}`);
 
   elizaLogger.info(`Agent API: http://localhost:${port}/${runtime.agentId}/message`);
 
