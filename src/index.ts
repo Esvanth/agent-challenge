@@ -56,20 +56,20 @@ async function main() {
     next();
   });
 
-  directClient.registerAgent(runtime);
-
-  // Custom /agent endpoint — avoids the crash in the built-in /agents route
-  directClient.app.get("/agent", (_req: any, res: any) => {
-    res.json({ id: runtime.agentId, name: runtime.character.name });
-  });
-
-  // Serve web UI on the same port
+  // Serve web UI BEFORE registerAgent so it takes priority over default routes
   const publicDir = path.join(process.cwd(), "public");
   if (fs.existsSync(publicDir)) {
     directClient.app.get("/", (_req: any, res: any) => {
       res.sendFile(path.join(publicDir, "index.html"));
     });
   }
+
+  directClient.registerAgent(runtime);
+
+  // Custom /agent endpoint — avoids the crash in the built-in /agents route
+  directClient.app.get("/agent", (_req: any, res: any) => {
+    res.json({ id: runtime.agentId, name: runtime.character.name });
+  });
 
   const port = parseInt(process.env.PORT || "3000");
   directClient.start(port);
