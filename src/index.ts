@@ -58,18 +58,18 @@ async function main() {
 
   directClient.registerAgent(runtime);
 
-  // Patch DirectClient's default "/" handler to serve the web UI
+  // Inject UI route at front of stack so it beats DirectClient's default "/"
   const publicDir = path.join(process.cwd(), "public");
   if (fs.existsSync(publicDir)) {
+    directClient.app.get("/", (_req: any, res: any) => {
+      const html = fs.readFileSync(path.join(publicDir, "index.html"), "utf8");
+      res.writeHead(200, { "Content-Type": "text/html" });
+      res.end(html);
+    });
     const router = (directClient.app as any)._router;
     if (router) {
-      for (const layer of router.stack) {
-        if (layer.route && layer.route.path === "/") {
-          layer.route.stack[0].handle = (_req: any, res: any) => {
-            res.sendFile(path.join(publicDir, "index.html"));
-          };
-        }
-      }
+      const ourLayer = router.stack.pop();
+      router.stack.unshift(ourLayer);
     }
   }
 
