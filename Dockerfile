@@ -9,6 +9,7 @@ RUN npm install
 # Copy source and build
 COPY tsconfig.json ./
 COPY src/ ./src/
+COPY public/ ./public/
 RUN npm run build
 
 # Create data directory
