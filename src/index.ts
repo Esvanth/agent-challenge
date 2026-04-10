@@ -58,18 +58,19 @@ async function main() {
 
   directClient.registerAgent(runtime);
 
-  // Remove DirectClient's default "/" route and replace with web UI
+  // Patch DirectClient's default "/" handler to serve the web UI
   const publicDir = path.join(process.cwd(), "public");
   if (fs.existsSync(publicDir)) {
     const router = (directClient.app as any)._router;
     if (router) {
-      router.stack = router.stack.filter((layer: any) =>
-        !(layer.route && layer.route.path === "/")
-      );
+      for (const layer of router.stack) {
+        if (layer.route && layer.route.path === "/") {
+          layer.route.stack[0].handle = (_req: any, res: any) => {
+            res.sendFile(path.join(publicDir, "index.html"));
+          };
+        }
+      }
     }
-    directClient.app.get("/", (_req: any, res: any) => {
-      res.sendFile(path.join(publicDir, "index.html"));
-    });
   }
 
   // Custom /agent endpoint — avoids the crash in the built-in /agents route
