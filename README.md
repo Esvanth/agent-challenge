@@ -6,7 +6,7 @@ MindTune is a personal AI agent that reads your EEG brainwave data, detects your
 
 | | |
 |---|---|
-| **Live Demo** | https://3xbipcs8g1rnc8qqwnmy87ppbgog2kzgegcuqjp3qlj9.node.k8s.prd.nos.ci |
+| **Live Demo** | https://4z6ltbnlkc9als6dmujzdyzrkntsltbzrvfjztfhyzht.node.k8s.prd.nos.ci |
 | **GitHub** | https://github.com/Esvanth/agent-challenge |
 | **Docker** | `docker.io/esvanth7/mindtune-eliza:latest` |
 
