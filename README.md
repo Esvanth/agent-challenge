@@ -34,7 +34,7 @@ You enter your EEG band values (or pick a preset scenario), and the agent:
 | Layer | Technology |
 |---|---|
 | Agent Framework | ElizaOS v2 |
-| LLM | LLaMA 3.3 70B via Groq |
+| LLM | Qwen2.5 72B via Nosana Inference |
 | Compute | Nosana decentralized GPU (Solana) |
 | Memory | SQLite (persistent across sessions) |
 | Server | Express + TypeScript |
@@ -61,11 +61,12 @@ cp .env.example .env
 Edit `.env`:
 
 ```env
-GROQ_API_KEY=your_groq_api_key
+NOSANA_API_KEY=your_nosana_api_key
+NOSANA_INFERENCE_URL=https://inference.nosana.io/v1
 PORT=3000
 ```
 
-Get a free Groq API key at [console.groq.com](https://console.groq.com)
+Get your Nosana API key at [deploy.nosana.com](https://deploy.nosana.com)
 
 ### 3. Run locally
 

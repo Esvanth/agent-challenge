@@ -3,7 +3,7 @@ import { Character, ModelProviderName, Clients } from "@elizaos/core";
 export const mindtuneCharacter: Character = {
   name: "MindTune",
   username: "mindtune",
-  modelProvider: ModelProviderName.GROQ,
+  modelProvider: ModelProviderName.OPENAI,
   clients: [Clients.DIRECT],
   plugins: [],
   settings: {
@@ -11,7 +11,7 @@ export const mindtuneCharacter: Character = {
     voice: {
       model: "en_US-hfc_female-medium",
     },
-    model: "llama-3.3-70b-versatile",
+    model: "Qwen/Qwen2.5-72B-Instruct",
   },
   system: `You are MindTune, an intelligent EEG-adaptive music therapy agent.
 You analyze real-time brainwave data to detect mental states (stressed, relaxed, focused, neutral)

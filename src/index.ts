@@ -12,11 +12,11 @@ import { recommendMusicAction, logFeedbackAction } from "./actions/recommendMusi
 
 dotenv.config();
 
-process.env.GROQ_API_KEY = process.env.GROQ_API_KEY || "";
-// Override decommissioned llama-3.2-90b-vision-preview
-process.env.GROQ_LARGE_MODEL = "llama-3.3-70b-versatile";
-process.env.LARGE_GROQ_MODEL = "llama-3.3-70b-versatile";
-process.env.GROQ_MODEL = "llama-3.3-70b-versatile";
+// Use Nosana hosted inference (OpenAI-compatible endpoint)
+process.env.OPENAI_API_URL = process.env.NOSANA_INFERENCE_URL || "https://inference.nosana.io/v1";
+process.env.OPENAI_API_KEY = process.env.NOSANA_API_KEY || "";
+process.env.SMALL_OPENAI_MODEL = "Qwen/Qwen2.5-72B-Instruct";
+process.env.LARGE_OPENAI_MODEL = "Qwen/Qwen2.5-72B-Instruct";
 
 async function main() {
   elizaLogger.info("Starting MindTune ElizaOS Agent...");
