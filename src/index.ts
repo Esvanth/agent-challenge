@@ -15,8 +15,8 @@ dotenv.config();
 // Use Nosana hosted inference (OpenAI-compatible endpoint)
 process.env.OPENAI_API_URL = process.env.NOSANA_INFERENCE_URL || "https://inference.nosana.io/v1";
 process.env.OPENAI_API_KEY = process.env.NOSANA_API_KEY || "";
-process.env.SMALL_OPENAI_MODEL = "Qwen/Qwen2.5-72B-Instruct";
-process.env.LARGE_OPENAI_MODEL = "Qwen/Qwen2.5-72B-Instruct";
+process.env.SMALL_OPENAI_MODEL = "Qwen/Qwen2.5-72B-Instruct-AWQ";
+process.env.LARGE_OPENAI_MODEL = "Qwen/Qwen2.5-72B-Instruct-AWQ";
 
 async function main() {
   elizaLogger.info("Starting MindTune ElizaOS Agent...");

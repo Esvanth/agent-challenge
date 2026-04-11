@@ -35,7 +35,7 @@ You enter your EEG band values (or pick a preset scenario), and the agent:
 | Layer | Technology | Role |
 |---|---|---|
 | Agent Framework | **ElizaOS v2** | Character, actions, memory, plugin ecosystem |
-| LLM | **Qwen2.5-72B-Instruct** | Natural language response generation |
+| LLM | **Qwen2.5-72B-Instruct-AWQ** | Natural language response generation (60k context) |
 | Inference | **Nosana Hosted Endpoint** | Decentralized GPU inference on Solana |
 | Deployment | **Nosana** | Containerized compute, live URL |
 | Memory | **SQLite** | Persistent win/fail feedback across sessions |

@@ -11,7 +11,7 @@ export const mindtuneCharacter: Character = {
     voice: {
       model: "en_US-hfc_female-medium",
     },
-    model: "Qwen/Qwen2.5-72B-Instruct",
+    model: "Qwen/Qwen2.5-72B-Instruct-AWQ",
   },
   system: `You are MindTune, an intelligent EEG-adaptive music therapy agent.
 You analyze real-time brainwave data to detect mental states (stressed, relaxed, focused, neutral)
