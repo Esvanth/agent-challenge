@@ -6,7 +6,7 @@ MindTune is a personal AI agent that reads your EEG brainwave data, detects your
 
 | | |
 |---|---|
-| **Live Demo** | https://4z6ltbnlkc9als6dmujzdyzrkntsltbzrvfjztfhyzht.node.k8s.prd.nos.ci |
+| **Live Demo** | https://2q6de9ejmvwevtyx5s8ssntshvunaa8b7z8ivwdfmzns.node.k8s.prd.nos.ci |
 | **GitHub** | https://github.com/Esvanth/agent-challenge |
 | **Docker** | `docker.io/esvanth7/mindtune-eliza:latest` |
 
@@ -17,9 +17,10 @@ MindTune is a personal AI agent that reads your EEG brainwave data, detects your
 You enter your EEG band values (or pick a preset scenario), and the agent:
 
 1. Computes your **Theta/Beta** and **Alpha/Beta** ratios — the gold-standard clinical markers for focus and stress
-2. Classifies your current mental state
+2. Classifies your current mental state (Stressed / Unfocused / Relaxed)
 3. Generates a precise **Spotify search query** with BPM, genre, and acoustic properties matched to your neurology
-4. Learns from your feedback — reply `win` or `fail` after listening, and MindTune remembers what works for you
+4. Uses **Qwen2.5-72B on Nosana** to produce a natural, empathetic response
+5. Learns from your feedback — reply `win` or `fail` after listening, and MindTune remembers what works for you
 
 | EEG Pattern | State Detected | Music Strategy |
 |---|---|---|
@@ -31,14 +32,27 @@ You enter your EEG band values (or pick a preset scenario), and the agent:
 
 ## Tech Stack
 
-| Layer | Technology |
+| Layer | Technology | Role |
+|---|---|---|
+| Agent Framework | **ElizaOS v2** | Character, actions, memory, plugin ecosystem |
+| LLM | **Qwen2.5-72B-Instruct** | Natural language response generation |
+| Inference | **Nosana Hosted Endpoint** | Decentralized GPU inference on Solana |
+| Deployment | **Nosana** | Containerized compute, live URL |
+| Memory | **SQLite** | Persistent win/fail feedback across sessions |
+| Server | **Express + TypeScript** | REST API + web UI serving |
+| Container | **Docker → Docker Hub** | `esvanth7/mindtune-eliza:latest` |
+
+---
+
+## Judging Criteria Coverage
+
+| Criteria | Implementation |
 |---|---|
-| Agent Framework | ElizaOS v2 |
-| LLM | Qwen2.5 72B via Nosana Inference |
-| Compute | Nosana decentralized GPU (Solana) |
-| Memory | SQLite (persistent across sessions) |
-| Server | Express + TypeScript |
-| Container | Docker → Docker Hub |
+| **Technical Implementation 💻** | ElizaOS v2 with custom actions (`ANALYZE_EEG`, `RECOMMEND_MUSIC`, `LOG_FEEDBACK`), TypeScript, error handling with LLM fallback |
+| **Nosana Integration ⚡** | Deployed on Nosana GPU network, uses Nosana hosted inference (`inference.nosana.io/v1`) for Qwen2.5-72B, proper Docker containerization |
+| **Usefulness & UX 🎯** | Real EEG analysis, live ratio computation, 3 quick scenarios, chat interface, win/fail feedback loop |
+| **Creativity & Originality 🎨** | EEG-to-music pipeline using clinical BCI markers (Theta/Beta ratio, Alpha/Beta), personalised music therapy agent |
+| **Documentation 📝** | Full README, setup instructions, REST API docs, science references, project structure |
 
 ---
 
@@ -87,7 +101,7 @@ The dashboard lets you:
 - Select stress score (0–5)
 - See **live ratio computation** (Theta/Beta, Alpha/Beta)
 - Load preset scenarios — Stressed, Unfocused, or Relaxed
-- Chat directly with the MindTune agent
+- Chat directly with the MindTune agent (powered by Qwen on Nosana)
 - Log win/fail feedback with one click
 
 ---
@@ -102,6 +116,26 @@ The dashboard lets you:
 
 ---
 
+## How It Works
+
+```
+User Input (EEG values)
+        ↓
+  Action Handler (deterministic)
+  - Parse EEG bands
+  - Compute Theta/Beta, Alpha/Beta ratios
+  - Classify mental state
+  - Select music query from science-backed library
+        ↓
+  Qwen2.5-72B on Nosana Inference
+  - Takes structured analysis as context
+  - Generates natural, empathetic response
+        ↓
+  UI Chat + Spotify Query
+```
+
+---
+
 ## REST API
 
 ```bash
@@ -109,14 +143,10 @@ The dashboard lets you:
 GET /agent
 → { "id": "<agentId>", "name": "MindTune" }
 
-# Send a message
-POST /{agentId}/message
+# Chat with MindTune
+POST /chat
 Content-Type: application/json
-
-{
-  "text": "EEG stress score 4, alpha 0.3, beta 0.9, theta 0.6",
-  "userId": "user"
-}
+{ "text": "EEG stress score 4, alpha 0.3, beta 0.9, theta 0.6" }
 ```
 
 ---
@@ -145,7 +175,8 @@ Go to [deploy.nosana.com](https://deploy.nosana.com) and use this job definition
       "expose": 3000,
       "gpu": false,
       "env": {
-        "GROQ_API_KEY": "<your_groq_api_key>",
+        "NOSANA_API_KEY": "<your_nosana_api_key>",
+        "NOSANA_INFERENCE_URL": "https://inference.nosana.io/v1",
         "PORT": "3000"
       }
     }
@@ -163,7 +194,7 @@ Go to [deploy.nosana.com](https://deploy.nosana.com) and use this job definition
 ```
 agent-challenge/
 ├── src/
-│   ├── index.ts              — agent entry point, web UI server
+│   ├── index.ts              — agent entry point, web UI server, /chat endpoint
 │   ├── character.ts          — MindTune personality + neuroscience knowledge
 │   └── actions/
 │       ├── analyzeEEG.ts     — EEG classification (stress, focus, calm)
