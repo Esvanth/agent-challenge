@@ -1,27 +1,25 @@
 {
-  "version": "1",
-  "type": "container",
-  "meta": {
-    "trigger": "api"
-  },
-  "global": {
-    "image": "docker.io/esvanth7/mindtune-eliza:latest",
-    "env": [
-      { "name": "GROQ_API_KEY", "value": "$GROQ_API_KEY" },
-      { "name": "GROQ_LARGE_MODEL", "value": "llama-3.3-70b-versatile" },
-      { "name": "LARGE_GROQ_MODEL", "value": "llama-3.3-70b-versatile" },
-      { "name": "PORT", "value": "3000" }
-    ]
-  },
   "ops": [
     {
       "id": "run-mindtune-agent",
-      "type": "container/run",
       "args": {
         "cmd": ["node", "dist/index.js"],
+        "gpu": false,
+        "image": "docker.io/esvanth7/mindtune-eliza:latest",
         "expose": 3000,
-        "gpu": false
-      }
+        "env": {
+          "GROQ_API_KEY": "your_groq_api_key_here",
+          "GROQ_LARGE_MODEL": "llama-3.3-70b-versatile",
+          "LARGE_GROQ_MODEL": "llama-3.3-70b-versatile",
+          "PORT": "3000"
+        }
+      },
+      "type": "container/run"
     }
-  ]
+  ],
+  "meta": {
+    "trigger": "dashboard"
+  },
+  "type": "container",
+  "version": "0.1"
 }

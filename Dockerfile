@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm install --legacy-peer-deps
 
 COPY tsconfig.json ./
 COPY src/ ./src/
@@ -27,13 +27,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# Copy only what's needed to run
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
-
-COPY --from=builder /app/dist/       ./dist/
-COPY --from=builder /app/public/     ./public/
-COPY --from=builder /app/characters/ ./characters/
+# Copy built output and node_modules from builder, then prune dev deps
+COPY package.json ./
+COPY --from=builder /app/node_modules/ ./node_modules/
+COPY --from=builder /app/dist/         ./dist/
+COPY --from=builder /app/public/       ./public/
+COPY --from=builder /app/characters/   ./characters/
+RUN npm prune --omit=dev
 
 RUN mkdir -p data
 

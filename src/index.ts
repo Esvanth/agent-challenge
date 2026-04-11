@@ -47,31 +47,52 @@ async function main() {
 
   const directClient = new DirectClient();
 
-  // CORS must be added BEFORE registerAgent so it runs before all routes
+  directClient.registerAgent(runtime);
+
+  // ElizaOS registers GET / inside its own apiRouter (mounted in the
+  // DirectClient constructor). The only reliable way to override it is to
+  // walk the router stack, find the route layer for "/", and replace its
+  // handler function directly.
+  const publicDir = path.join(process.cwd(), "public");
+  if (fs.existsSync(publicDir)) {
+    const htmlPath = path.join(publicDir, "index.html");
+    const serveUI = (_req: any, res: any) => {
+      res.setHeader("Content-Type", "text/html");
+      res.end(fs.readFileSync(htmlPath, "utf8"));
+    };
+
+    let replaced = false;
+    const appStack = (directClient.app as any)._router?.stack ?? [];
+    for (const layer of appStack) {
+      // apiRouter is mounted as a middleware layer whose .handle has its own .stack
+      const subStack = layer?.handle?.stack;
+      if (!Array.isArray(subStack)) continue;
+      for (const sub of subStack) {
+        if (sub?.route?.path === "/" && sub.route.methods?.get) {
+          // Replace every GET handler on this route
+          for (const routeLayer of sub.route.stack) {
+            if (routeLayer.method === "get") {
+              routeLayer.handle = serveUI;
+              replaced = true;
+            }
+          }
+        }
+      }
+    }
+    if (!replaced) {
+      elizaLogger.warn("Could not find ElizaOS GET / route to replace — falling back to app.get");
+      directClient.app.get("/", serveUI);
+    }
+  }
+
+  // CORS for API routes
   directClient.app.use((_req: any, res: any, next: any) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-    if (_req.method === "OPTIONS") { res.sendStatus(200); return; }
+    if (_req.method === "OPTIONS") { res.writeHead(200); res.end(); return; }
     next();
   });
-
-  directClient.registerAgent(runtime);
-
-  // Inject UI route at front of stack so it beats DirectClient's default "/"
-  const publicDir = path.join(process.cwd(), "public");
-  if (fs.existsSync(publicDir)) {
-    directClient.app.get("/", (_req: any, res: any) => {
-      const html = fs.readFileSync(path.join(publicDir, "index.html"), "utf8");
-      res.writeHead(200, { "Content-Type": "text/html" });
-      res.end(html);
-    });
-    const router = (directClient.app as any)._router;
-    if (router) {
-      const ourLayer = router.stack.pop();
-      router.stack.unshift(ourLayer);
-    }
-  }
 
   // Custom /agent endpoint — avoids the crash in the built-in /agents route
   directClient.app.get("/agent", (_req: any, res: any) => {
