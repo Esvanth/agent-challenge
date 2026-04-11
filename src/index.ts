@@ -32,7 +32,7 @@ async function main() {
 
   const runtime = new AgentRuntime({
     databaseAdapter,
-    token: process.env.GROQ_API_KEY || "",
+    token: process.env.NOSANA_API_KEY || process.env.OPENAI_API_KEY || "",
     modelProvider: mindtuneCharacter.modelProvider,
     character: mindtuneCharacter,
     actions: [analyzeEEGAction, recommendMusicAction, logFeedbackAction],
@@ -134,16 +134,18 @@ async function main() {
       : `You are MindTune, an EEG-adaptive music therapy AI. Respond helpfully to: "${text}"\n\nYou help users by analyzing EEG brainwave data (delta, theta, alpha, beta, gamma bands) and recommending music to improve their mental state. Keep your response under 100 words.`;
 
     try {
-      const llmResponse = await generateText({
-        runtime,
-        context: prompt,
-        modelClass: ModelClass.LARGE,
-      });
+      const timeout = new Promise<string>((_, reject) =>
+        setTimeout(() => reject(new Error("LLM timeout")), 20000)
+      );
+      const llmResponse = await Promise.race([
+        generateText({ runtime, context: prompt, modelClass: ModelClass.LARGE }),
+        timeout,
+      ]);
       res.json([{ text: llmResponse }]);
     } catch (err: any) {
-      elizaLogger.error("Qwen generateText error:", err);
-      // Fall back to structured response if LLM fails
-      const fallback = structuredContext || "Hi! I'm MindTune. Enter your EEG values and click Analyze to get a music recommendation.";
+      elizaLogger.error("Qwen generateText error:", err.message);
+      // Fall back to structured response if LLM fails or times out
+      const fallback = structuredContext || "Hi! I'm MindTune. Enter your EEG values and click **Analyze EEG + Get Music** to get a recommendation.";
       res.json([{ text: fallback }]);
     }
   });
