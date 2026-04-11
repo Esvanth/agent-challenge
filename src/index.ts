@@ -1,4 +1,4 @@
-import { AgentRuntime, elizaLogger, CacheManager, MemoryCacheAdapter } from "@elizaos/core";
+import { AgentRuntime, elizaLogger, CacheManager, MemoryCacheAdapter, generateText, ModelClass } from "@elizaos/core";
 import { SqliteDatabaseAdapter } from "@elizaos/adapter-sqlite";
 import { DirectClient } from "@elizaos/client-direct";
 import Database from "better-sqlite3";
@@ -99,40 +99,53 @@ async function main() {
     res.json({ id: runtime.agentId, name: runtime.character.name });
   });
 
-  // Direct /chat endpoint — routes to action handlers by keyword matching,
-  // no LLM needed for routing so it always responds reliably.
+  // Direct /chat endpoint — our action logic extracts structured data,
+  // then Qwen (via Nosana inference) generates the final natural response.
   directClient.app.post("/chat", async (req: any, res: any) => {
     const text: string = req.body?.text || "";
-    const lower = text.toLowerCase();
-
-    let responseText = "";
 
     const fakeMessage = { content: { text } } as any;
     const captured: string[] = [];
     const callback = async (response: { text: string }): Promise<any> => { captured.push(response.text); };
 
+    let structuredContext = "";
+
     try {
       if (await analyzeEEGAction.validate(runtime, fakeMessage, undefined as any)) {
         await analyzeEEGAction.handler(runtime, fakeMessage, undefined as any, {}, callback);
-        // Also check for music recommendation in same message
         if (await recommendMusicAction.validate(runtime, fakeMessage, undefined as any)) {
           await recommendMusicAction.handler(runtime, fakeMessage, undefined as any, {}, callback);
         }
+        structuredContext = captured.join("\n\n");
       } else if (await logFeedbackAction.validate(runtime, fakeMessage, undefined as any)) {
         await logFeedbackAction.handler(runtime, fakeMessage, undefined as any, {}, callback);
+        structuredContext = captured.join("\n\n");
       } else if (await recommendMusicAction.validate(runtime, fakeMessage, undefined as any)) {
         await recommendMusicAction.handler(runtime, fakeMessage, undefined as any, {}, callback);
-      } else {
-        // Generic fallback response
-        responseText = `Hi! I'm MindTune, your EEG-adaptive music agent.\n\nTry:\n- **Analyze EEG**: Enter your EEG values and stress score\n- **Get music**: Say "I'm stressed" or "help me focus"\n- **Feedback**: Reply "win" or "fail" after listening`;
+        structuredContext = captured.join("\n\n");
       }
     } catch (err: any) {
-      elizaLogger.error("Chat handler error:", err);
-      responseText = "Sorry, I encountered an error. Please try again.";
+      elizaLogger.error("Action handler error:", err);
     }
 
-    if (captured.length > 0) responseText = captured.join("\n\n");
-    res.json([{ text: responseText }]);
+    // Use Qwen on Nosana to generate a natural, conversational response
+    const prompt = structuredContext
+      ? `You are MindTune, an EEG-adaptive music therapy AI. A user sent: "${text}"\n\nYour analysis system produced this data:\n${structuredContext}\n\nBased on this, write a concise, empathetic response to the user. Keep it under 150 words. Do not repeat the raw data verbatim — synthesize it naturally.`
+      : `You are MindTune, an EEG-adaptive music therapy AI. Respond helpfully to: "${text}"\n\nYou help users by analyzing EEG brainwave data (delta, theta, alpha, beta, gamma bands) and recommending music to improve their mental state. Keep your response under 100 words.`;
+
+    try {
+      const llmResponse = await generateText({
+        runtime,
+        context: prompt,
+        modelClass: ModelClass.LARGE,
+      });
+      res.json([{ text: llmResponse }]);
+    } catch (err: any) {
+      elizaLogger.error("Qwen generateText error:", err);
+      // Fall back to structured response if LLM fails
+      const fallback = structuredContext || "Hi! I'm MindTune. Enter your EEG values and click Analyze to get a music recommendation.";
+      res.json([{ text: fallback }]);
+    }
   });
 
   const port = parseInt(process.env.PORT || "3000");
