@@ -1438,7 +1438,7 @@
     showTyping(true);
 
     try {
-      const r = await fetch(`${API_BASE}/${agentId}/message`, {
+      const r = await fetch(`${API_BASE}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text, userId: 'user', userName: 'User' }),

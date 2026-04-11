@@ -99,6 +99,42 @@ async function main() {
     res.json({ id: runtime.agentId, name: runtime.character.name });
   });
 
+  // Direct /chat endpoint — routes to action handlers by keyword matching,
+  // no LLM needed for routing so it always responds reliably.
+  directClient.app.post("/chat", async (req: any, res: any) => {
+    const text: string = req.body?.text || "";
+    const lower = text.toLowerCase();
+
+    let responseText = "";
+
+    const fakeMessage = { content: { text } } as any;
+    const captured: string[] = [];
+    const callback = async (response: { text: string }): Promise<any> => { captured.push(response.text); };
+
+    try {
+      if (await analyzeEEGAction.validate(runtime, fakeMessage, undefined as any)) {
+        await analyzeEEGAction.handler(runtime, fakeMessage, undefined as any, {}, callback);
+        // Also check for music recommendation in same message
+        if (await recommendMusicAction.validate(runtime, fakeMessage, undefined as any)) {
+          await recommendMusicAction.handler(runtime, fakeMessage, undefined as any, {}, callback);
+        }
+      } else if (await logFeedbackAction.validate(runtime, fakeMessage, undefined as any)) {
+        await logFeedbackAction.handler(runtime, fakeMessage, undefined as any, {}, callback);
+      } else if (await recommendMusicAction.validate(runtime, fakeMessage, undefined as any)) {
+        await recommendMusicAction.handler(runtime, fakeMessage, undefined as any, {}, callback);
+      } else {
+        // Generic fallback response
+        responseText = `Hi! I'm MindTune, your EEG-adaptive music agent.\n\nTry:\n- **Analyze EEG**: Enter your EEG values and stress score\n- **Get music**: Say "I'm stressed" or "help me focus"\n- **Feedback**: Reply "win" or "fail" after listening`;
+      }
+    } catch (err: any) {
+      elizaLogger.error("Chat handler error:", err);
+      responseText = "Sorry, I encountered an error. Please try again.";
+    }
+
+    if (captured.length > 0) responseText = captured.join("\n\n");
+    res.json([{ text: responseText }]);
+  });
+
   const port = parseInt(process.env.PORT || "3000");
   directClient.start(port);
   elizaLogger.info(`Web UI: http://localhost:${port}`);
